@@ -12,7 +12,7 @@ import {
 import FeedbackModal from './FeedbackModal';
 import './Navbar.css';
 
-const FONT_SIZES = [20, 22, 24, 26, 28, 30];
+const FONT_SIZES = [30, 32, 34, 36, 38, 40, 42];
 
 export default function Navbar() {
   const { theme, toggleTheme }   = useTheme();

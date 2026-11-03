@@ -327,9 +327,12 @@
   margin: 0 auto;
   padding: 0 var(--reading-padding, 1.5rem);
   font-family: 'Bharati Gopika Two', 'Rasa', serif !important;
-  font-size: var(--reading-font-size, 20px) !important;
+  font-size: var(--reading-font-size, 30px) !important;
   line-height: 1.95;
   color: var(--text-reading);
+  text-align: justify !important;
+  text-align-last: justify !important;
+  text-justify: inter-word;
 }
 
 /* Force all child elements (p, div, span, font, b, h1-h6) to inherit dynamic font size */
@@ -345,6 +348,8 @@
   background: transparent !important;
 }
 
+.chapter__text-content,
+.chapter__html-content,
 .chapter__text-content p,
 .chapter__html-content p,
 .chapter__html-content div,
@@ -352,7 +357,7 @@
   margin-bottom: 1.7rem;
   line-height: 1.95;
   text-align: justify !important;
-  text-align-last: auto;
+  text-align-last: justify !important;
   text-justify: inter-word !important;
   hyphens: auto;
   -webkit-hyphens: auto;

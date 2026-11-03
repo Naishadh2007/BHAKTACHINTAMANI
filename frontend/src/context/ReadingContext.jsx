@@ -4,19 +4,20 @@ const ReadingContext = createContext(null);
 
 // Exact padding for each font size (reduces padding as font increases for wider reading space)
 const PADDING_MAP = {
-  20: '1.5rem',
-  22: '1.25rem',
-  24: '1.0rem',
-  26: '0.75rem',
-  28: '0.5rem',
   30: '0.25rem',
+  32: '0.25rem',
+  34: '0.25rem',
+  36: '0.25rem',
+  38: '0.25rem',
+  40: '0.25rem',
+  42: '0.25rem',
 };
 
 export function ReadingProvider({ children }) {
   // ── Font size (persisted) ──
   const [fontSize, setFontSizeState] = useState(() => {
     const saved = parseInt(localStorage.getItem('bc-font-size'), 10);
-    return saved && saved >= 20 && saved <= 30 ? saved : 20;
+    return saved && saved >= 30 && saved <= 42 && saved % 2 === 0 ? saved : 30;
   });
 
   const setFontSize = (size) => {
@@ -27,7 +28,7 @@ export function ReadingProvider({ children }) {
   // Apply font size + matching padding to CSS variables
   useEffect(() => {
     document.documentElement.style.setProperty('--reading-font-size', `${fontSize}px`);
-    document.documentElement.style.setProperty('--reading-padding', PADDING_MAP[fontSize] || '2.0rem');
+    document.documentElement.style.setProperty('--reading-padding', PADDING_MAP[fontSize] || '0.25rem');
   }, [fontSize]);
 
   // ── Single Bookmark (only ONE chapter at a time, persisted) ──
