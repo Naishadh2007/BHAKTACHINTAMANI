@@ -53,6 +53,10 @@ Route::prefix('admin')->middleware(\App\Http\Middleware\AdminAuth::class)->group
         ->middleware('permission:manage_users');
     Route::put('/users/{id}',     [UserController::class, 'update'])
         ->middleware('permission:manage_users');
-    Route::delete('/users/{id}',  [UserController::class, 'destroy'])
-        ->middleware('permission:manage_users');
+    // Feedbacks
+    Route::get('/feedbacks',              [\App\Http\Controllers\FeedbackController::class, 'index']);
+    Route::put('/feedbacks/{id}/read',    [\App\Http\Controllers\FeedbackController::class, 'markAsRead']);
+    Route::delete('/feedbacks/{id}',      [\App\Http\Controllers\FeedbackController::class, 'destroy']);
 });
+
+Route::post('/feedback', [\App\Http\Controllers\FeedbackController::class, 'store']);

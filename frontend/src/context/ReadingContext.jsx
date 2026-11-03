@@ -2,14 +2,14 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const ReadingContext = createContext(null);
 
-// Exact padding for each font size (manually tuned)
+// Exact padding for each font size (reduces padding as font increases for wider reading space)
 const PADDING_MAP = {
-  20: '2.5rem',
-  22: '2.5rem',
-  24: '2.0rem',
-  26: '1.8rem',
-  28: '1.5rem',
-  30: '1.2rem',
+  20: '1.5rem',
+  22: '1.25rem',
+  24: '1.0rem',
+  26: '0.75rem',
+  28: '0.5rem',
+  30: '0.25rem',
 };
 
 export function ReadingProvider({ children }) {
@@ -64,14 +64,16 @@ export function ReadingProvider({ children }) {
 
   const isBookmarked = (chapterId) => bookmark?.chapterId === chapterId;
 
-  // ── Current chapter ID (set by ChapterPage) ──
-  const [currentChapterId, setCurrentChapterId] = useState(null);
+  // ── Current chapter ID & Info (set by ChapterPage) ──
+  const [currentChapterId, setCurrentChapterId]     = useState(null);
+  const [currentChapterInfo, setCurrentChapterInfo] = useState(null);
 
   return (
     <ReadingContext.Provider value={{
       fontSize, setFontSize,
       bookmark, toggleBookmark, isBookmarked,
       currentChapterId, setCurrentChapterId,
+      currentChapterInfo, setCurrentChapterInfo,
     }}>
       {children}
     </ReadingContext.Provider>

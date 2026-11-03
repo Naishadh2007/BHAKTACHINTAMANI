@@ -275,12 +275,12 @@
 
 /* Reading Article Outer Container */
 .chapter__article {
-  max-width: 700px;
+  max-width: 740px;
   margin: 0 auto;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: var(--space-2xl) var(--space-2xl);
+  padding: var(--space-xl) var(--space-xl);
   box-shadow: var(--shadow-card);
 }
 
@@ -321,12 +321,12 @@
   margin: var(--space-xl) 0 var(--space-2xl);
 }
 
-/* ── CENTERED READING CONTAINER WITH HIGH SIDE PADDING & FORCED JUSTIFY ── */
+/* ── CENTERED READING CONTAINER WITH DYNAMIC COMFORTABLE WIDTH & PADDING ── */
 .chapter__reading-container {
-  max-width: 520px;
+  max-width: 620px;
   margin: 0 auto;
-  padding: 0 var(--reading-padding, 2.5rem);
-  font-family: 'Rasa', serif !important;
+  padding: 0 var(--reading-padding, 1.5rem);
+  font-family: 'Bharati Gopika Two', 'Rasa', serif !important;
   font-size: var(--reading-font-size, 20px) !important;
   line-height: 1.95;
   color: var(--text-reading);
@@ -339,7 +339,7 @@
 .chapter__html-content,
 .chapter__html-content * {
   font-size: inherit !important;
-  font-family: 'Rasa', serif !important;
+  font-family: 'Bharati Gopika Two', 'Rasa', serif !important;
   line-height: 1.95;
   color: inherit;
   background: transparent !important;
@@ -396,7 +396,8 @@
 .chapter__text-content strong,
 .chapter__html-content b,
 .chapter__html-content strong {
-  font-weight: 700 !important;
+  font-family: 'Bharati Title Two', 'Rasa', serif !important;
+  font-weight: normal !important;
   color: var(--text-primary) !important;
 }
 

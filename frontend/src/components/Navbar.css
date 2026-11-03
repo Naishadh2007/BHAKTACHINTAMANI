@@ -248,6 +248,7 @@
   color: var(--text-primary);
   background: transparent;
   border: 0;
+  border-radius: 8px;
   cursor: pointer;
   font-family: var(--font-ui);
   font-size: 0.875rem;
@@ -272,6 +273,11 @@
 [data-theme="dark"] .navbar-dropdown-item:focus-visible {
   background: rgba(74, 130, 184, 0.16);
   color: var(--text-primary);
+}
+
+.popup-feedback-btn {
+  border-radius: 8px;
+  margin-top: 2px;
 }
 
 @keyframes popupIn {

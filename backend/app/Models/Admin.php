@@ -10,6 +10,8 @@ class Admin extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'name',
         'email',

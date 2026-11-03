@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import PermissionGate from '../components/PermissionGate';
-import { IconBook, IconCheck, IconFileText, IconUsers, IconPlus, IconGlobe } from '../../components/Icons';
+import { IconBook, IconCheck, IconFileText, IconUsers, IconPlus, IconGlobe, IconMessage } from '../../components/Icons';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://bhaktachintamani.freedev.app';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const CHAPTERS_API = `${API_BASE}/api_admin_chapters.php`;
+const FEEDBACK_API = `${API_BASE}/api_feedbacks.php`;
 
 export default function DashboardPage() {
   const { authAxios } = useAuth();
@@ -37,14 +38,21 @@ export default function DashboardPage() {
           if (r3?.data && !isHTML(r3.data)) data = r3.data;
         }
 
+        // Feedbacks count
+        let fbCount = 0;
+        const fbRes = await axios.get(`${FEEDBACK_API}?limit=1`).catch(() => null);
+        if (fbRes?.data && !isHTML(fbRes.data)) {
+          fbCount = fbRes.data.total ?? 0;
+        }
+
         const total  = data?.total ?? (Array.isArray(data) ? data.length : (Array.isArray(data?.data) ? data.data.length : 0));
         const drafts = Array.isArray(data?.data)
           ? data.data.filter(c => c.status === 'draft').length
           : 0;
 
-        setStats({ published: total - drafts, draft: drafts, total, users: 1 });
+        setStats({ published: total - drafts, draft: drafts, total, users: 1, feedbacks: fbCount });
       } catch {
-        setStats({ published: 0, draft: 0, total: 0, users: 0 });
+        setStats({ published: 0, draft: 0, total: 0, users: 0, feedbacks: 0 });
       } finally {
         setLoading(false);
       }
@@ -56,6 +64,7 @@ export default function DashboardPage() {
     { icon: IconBook,     label: 'Total Chapters', key: 'total',     link: '/admin/chapters' },
     { icon: IconCheck,    label: 'Published',      key: 'published', link: '/admin/chapters?status=published' },
     { icon: IconFileText, label: 'Drafts',         key: 'draft',     link: '/admin/chapters?status=draft' },
+    { icon: IconMessage,  label: 'Feedbacks',      key: 'feedbacks', link: '/admin/feedbacks' },
     { icon: IconUsers,    label: 'Admin Users',    key: 'users',     link: '/admin/users' },
   ];
 

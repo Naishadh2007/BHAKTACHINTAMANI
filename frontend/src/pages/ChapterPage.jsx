@@ -52,16 +52,19 @@ export default function ChapterPage() {
   const [scrollFocusIndex, setScrollFocusIndex] = useState(0);
   const [activeWordMeaning, setActiveWordMeaning] = useState(null);
   const { lang }                        = useLanguage();
-  const { fontSize, setCurrentChapterId } = useReading();
+  const { fontSize, setCurrentChapterId, setCurrentChapterInfo } = useReading();
   const sidebarRef                      = useRef(null);
 
   const ITEM_HEIGHT = 56;
 
-  // Tell Navbar which chapter is open (for bookmark btn)
+  // Tell Navbar which chapter is open (for bookmark btn & feedback locking)
   useEffect(() => {
     setCurrentChapterId(id ? Number(id) : null);
-    return () => setCurrentChapterId(null);
-  }, [id, setCurrentChapterId]);
+    return () => {
+      setCurrentChapterId(null);
+      setCurrentChapterInfo(null);
+    };
+  }, [id, setCurrentChapterId, setCurrentChapterInfo]);
 
   // Fetch all chapters for sidebar
   useEffect(() => {
@@ -109,8 +112,10 @@ export default function ChapterPage() {
 
       if (data && data.chapter) {
         setChapterData(data);
+        setCurrentChapterInfo(data.chapter);
       } else if (data && data.id) {
         setChapterData({ chapter: data, prev_chapter: null, next_chapter: null });
+        setCurrentChapterInfo(data);
       } else {
         setError(lang === 'gu' ? 'પ્રકરણ મળ્યું નથી.' : 'Chapter not found.');
       }
@@ -331,7 +336,7 @@ export default function ChapterPage() {
                   style={{ fontSize: `${fontSize}px` }}
                   onClick={handleContentClick}
                 >
-                  {sanitizedContent.includes('<p>') || sanitizedContent.includes('<div>') || sanitizedContent.includes('style=') || sanitizedContent.includes('<br>') || sanitizedContent.includes('<abbr') || sanitizedContent.includes('data-meaning') ? (
+                  {/<\/?(?:p|div|br|span|b|strong|abbr|h[1-6]|center)\b/i.test(sanitizedContent) ? (
                     <div
                       className="chapter__html-content"
                       dangerouslySetInnerHTML={{ __html: sanitizedContent }}

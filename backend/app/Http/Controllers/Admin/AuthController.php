@@ -21,25 +21,8 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        // Auto-create or repair main admin if missing or incorrect
-        if (Admin::count() === 0) {
-            Admin::create([
-                'name'           => 'Main Admin',
-                'email'          => 'naishad@ssgd.com',
-                'password'       => Hash::make('naishad@123'),
-                'is_super_admin' => true,
-            ]);
-        }
-
-        $admin = Admin::where('email', $request->email)->first();
-
-        // Auto-repair password for main admin if naishad@123 is used
-        if ($admin && $admin->email === 'naishad@ssgd.com' && $request->password === 'naishad@123') {
-            if (!Hash::check($request->password, $admin->password)) {
-                $admin->password = Hash::make('naishad@123');
-                $admin->save();
-            }
-        }
+        $email = strtolower(trim($request->email));
+        $admin = Admin::whereRaw('LOWER(email) = ?', [$email])->first();
 
         if (!$admin || !Hash::check($request->password, $admin->password)) {
             throw ValidationException::withMessages([
@@ -47,18 +30,8 @@ class AuthController extends Controller
             ]);
         }
 
-        // Revoke all previous tokens for a clean session
-        try {
-            $admin->tokens()->delete();
-        } catch (\Throwable $e) {
-            // Ignore if tokens table empty
-        }
-
-        try {
-            $token = $admin->createToken('admin-panel')->plainTextToken;
-        } catch (\Throwable $e) {
-            $token = 'admin_session_' . bin2hex(random_bytes(24));
-        }
+        // Preserve other sessions and only return a persisted token.
+        $token = $admin->createToken('admin-panel')->plainTextToken;
 
         return response()->json([
             'token'       => $token,
@@ -77,7 +50,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->tokens()->delete();
+        $request->user()->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Logged out successfully.']);
     }

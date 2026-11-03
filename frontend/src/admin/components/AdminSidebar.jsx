@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import PermissionGate from './PermissionGate';
 import { useAuth } from '../../context/AuthContext';
-import { IconBook, IconDashboard, IconUsers, IconArrowLeft, IconArrowRight } from '../../components/Icons';
+import { IconBook, IconDashboard, IconUsers, IconArrowLeft, IconArrowRight, IconMessage } from '../../components/Icons';
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', icon: IconDashboard, label: 'Dashboard',  perm: 'view_dashboard' },
   { to: '/admin/chapters',  icon: IconBook,      label: 'Chapters',   perm: 'manage_chapters' },
   { to: '/admin/users',     icon: IconUsers,     label: 'Users',      perm: 'manage_users' },
+  { to: '/admin/feedbacks', icon: IconMessage,   label: 'Feedbacks',  perm: 'view_dashboard' },
 ];
 
 export default function AdminSidebar() {

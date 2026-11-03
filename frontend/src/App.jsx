@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
@@ -36,7 +36,7 @@ export default function App() {
               <Route path="/chapter/:id" element={<><Navbar /><ChapterPage /></>} />
 
               {/* Admin panel — separate layout */}
-              <Route path="/admin/*" element={<AdminApp />} />
+              <Route path="/admin/*" element={import.meta.env.DEV ? <Navigate to="/" replace /> : <AdminApp />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>

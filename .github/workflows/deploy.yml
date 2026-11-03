@@ -31,9 +31,6 @@ jobs:
           cd frontend
           npm ci
           npm run build
-        env:
-          VITE_API_URL: https://bhaktachintamani.freedev.app
-
       - name: Copy built frontend and php scripts into backend root and backend/public
         run: |
           cp -r frontend/dist/. backend/

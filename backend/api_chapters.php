@@ -9,8 +9,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$httpHost = explode(':', $_SERVER['HTTP_HOST'] ?? '')[0];
-$isLocal  = empty($httpHost) || in_array($httpHost, ['127.0.0.1', 'localhost']) || strpos($_SERVER['HTTP_HOST'] ?? '', 'freedev.app') === false;
+$isLocal = in_array(explode(':', $_SERVER['HTTP_HOST'] ?? '')[0], ['localhost', '127.0.0.1', ''])
+    || (php_sapi_name() === 'cli-server')
+    || (isset($_SERVER['SERVER_ADDR']) && in_array($_SERVER['SERVER_ADDR'], ['127.0.0.1', '::1']));
 
 if ($isLocal) {
     $host = '127.0.0.1';

@@ -11,6 +11,7 @@ import './RichTextEditor.css';
 
 export default function RichTextEditor({ value, onChange, label, placeholder }) {
   const editorRef = useRef(null);
+  const [showHTML, setShowHTML] = useState(false);
 
   // Abbr / Word Meaning Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,12 +22,13 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
 
   // Sync value to editor content if external change
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
+    if (!showHTML && editorRef.current && editorRef.current.innerHTML !== value) {
       editorRef.current.innerHTML = value || '';
     }
-  }, [value]);
+  }, [value, showHTML]);
 
   const exec = (command, val = null) => {
+    if (showHTML) return;
     document.execCommand(command, false, val);
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
@@ -62,7 +64,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
       node = node.parentNode;
     }
 
-    if (abbrNode) {
+    if (abbrNode && editorRef.current.contains(abbrNode)) {
       setExistingAbbrNode(abbrNode);
       setSelectedText(abbrNode.textContent);
       setMeaningText(abbrNode.getAttribute('data-meaning') || abbrNode.getAttribute('title') || '');
@@ -141,8 +143,8 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
    */
   const handleRemoveAbbr = () => {
     if (existingAbbrNode) {
-      const textNode = document.createTextNode(existingAbbrNode.textContent);
-      existingAbbrNode.parentNode.replaceChild(textNode, existingAbbrNode);
+      // Keep any bold/other formatting nested inside the word.
+      existingAbbrNode.replaceWith(...existingAbbrNode.childNodes);
       if (editorRef.current) {
         onChange(editorRef.current.innerHTML);
       }
@@ -204,7 +206,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
 
       {/* Editor Toolbar with Bold, Alignments & Word Meaning (<abbr>) */}
       <div className="rich-editor__toolbar">
-        <span className="rich-editor__font-badge">Font: Rasa</span>
+        <span className="rich-editor__font-badge">Gopika / Title Two</span>
 
         <div className="rich-editor__divider" />
 
@@ -213,7 +215,8 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
           type="button"
           className="btn btn-secondary btn-sm rich-editor__btn"
           onClick={() => exec('bold')}
-          title="Bold (Rasa Bold)"
+          disabled={showHTML}
+          title="Bold (Bharati Title Two)"
         >
           <IconBold size={16} />
           <span>Bold</span>
@@ -224,6 +227,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
           type="button"
           className="btn btn-primary btn-sm rich-editor__btn"
           onClick={handleOpenAbbrModal}
+          disabled={showHTML}
           title="Add Word Meaning / Glossary (<abbr>)"
         >
           <IconHelp size={16} />
@@ -237,6 +241,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
           onClick={() => exec('justifyLeft')}
+          disabled={showHTML}
           title="Align Left"
         >
           <IconAlignLeft size={16} />
@@ -245,6 +250,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
           onClick={() => exec('justifyCenter')}
+          disabled={showHTML}
           title="Align Center"
         >
           <IconAlignCenter size={16} />
@@ -253,6 +259,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
           onClick={() => exec('justifyRight')}
+          disabled={showHTML}
           title="Align Right"
         >
           <IconAlignRight size={16} />
@@ -261,13 +268,33 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
           onClick={() => exec('justifyFull')}
+          disabled={showHTML}
           title="Justify Text"
         >
           <IconAlignJustify size={16} />
         </button>
+        <div className="rich-editor__divider" />
+        <button
+          type="button"
+          className={`btn btn-sm rich-editor__btn ${showHTML ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setShowHTML(current => !current)}
+          aria-pressed={showHTML}
+          title="View and edit the stored HTML"
+        >
+          {showHTML ? 'Visual' : 'HTML'}
+        </button>
       </div>
 
       {/* Editable Container */}
+      {showHTML ? (
+        <textarea
+          className="rich-editor__source"
+          aria-label={`${label || 'Content'} HTML source`}
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          spellCheck={false}
+        />
+      ) : (
       <div
         ref={editorRef}
         className="rich-editor__content font-rasa"
@@ -289,6 +316,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
           }
         }}
       />
+      )}
 
       {/* Word Meaning Input Modal */}
       {modalOpen && (

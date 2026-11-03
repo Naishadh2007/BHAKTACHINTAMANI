@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useReading } from '../context/ReadingContext';
 import {
   IconAlert, IconBookmarkFilled, IconBook,
-  IconFilter, IconX
+  IconFilter, IconX, IconChevronRight
 } from '../components/Icons';
 import './HomePage.css';
 
@@ -361,25 +361,35 @@ export default function HomePage() {
                           {formattedNum}
                         </span>
 
-                        {/* Card Content */}
-                        <div className="chapter-card__body">
-                          <div className="chapter-card__top">
+                        {/* Top Metadata Row */}
+                        <div className="chapter-card__top">
+                          <div className="chapter-card__badge-wrapper">
                             <span className="chapter-card__order-badge font-rasa">
+                              <span className="chapter-card__badge-dot" />
                               {lang === 'gu' ? `પ્રકરણ ${toGujaratiDigits(orderNum)}` : `Chapter ${orderNum}`}
                             </span>
+                          </div>
 
+                          <div className="chapter-card__actions">
                             {isBookmarked && (
-                              <span className="chapter-card__bookmark-pill" title="Bookmarked">
+                              <span className="chapter-card__bookmark-pill" title={lang === 'gu' ? 'બુકમાર્ક' : 'Bookmarked'}>
                                 <IconBookmarkFilled size={13} color="var(--accent)" />
                               </span>
                             )}
+                            <span className="chapter-card__read-arrow" aria-hidden="true">
+                              <IconChevronRight size={15} />
+                            </span>
                           </div>
+                        </div>
 
+                        {/* Card Title */}
+                        <div className="chapter-card__body">
                           <h2 className="chapter-card__title font-rasa">{getTitle(chapter)}</h2>
                         </div>
 
-                        {/* Left Accent Bar */}
+                        {/* Left Glow Bar & Bottom Glow Line */}
                         <div className="chapter-card__accent-bar" aria-hidden="true" />
+                        <div className="chapter-card__shimmer" aria-hidden="true" />
                       </Link>
                     );
                   })

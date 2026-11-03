@@ -1,5 +1,10 @@
 <?php
+ini_set('display_errors', 0);
+error_reporting(0);
+ob_start();
+
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
@@ -9,11 +14,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$host = 'sql107.infinityfree.com';
-$user = 'if0_42640441';
-$pass = 'Naishadhbv2007';
-$db   = 'if0_42640441_bhaktchintamani';
-$port = 3306;
+$isLocal = in_array(explode(':', $_SERVER['HTTP_HOST'] ?? '')[0], ['localhost', '127.0.0.1', ''])
+    || (php_sapi_name() === 'cli-server')
+    || (isset($_SERVER['SERVER_ADDR']) && in_array($_SERVER['SERVER_ADDR'], ['127.0.0.1', '::1']));
+
+if ($isLocal) {
+    $host = '127.0.0.1';
+    $user = 'root';
+    $pass = '';
+    $db   = 'bhaktachintamani';
+    $port = 3306;
+} else {
+    $host = 'sql107.infinityfree.com';
+    $user = 'if0_42640441';
+    $pass = 'Naishadhbv2007';
+    $db   = 'if0_42640441_bhaktchintamani';
+    $port = 3306;
+}
 
 try {
     $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4", $user, $pass, [
@@ -53,36 +70,32 @@ try {
       KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 
-    // Ensure default super admin accounts exist with correct bcrypt hashes
-    $defaultAdmins = [
-        ['name' => 'Main Admin', 'email' => 'naishad@ssgd.com', 'password' => 'naishad@123'],
-        ['name' => 'ReadVerse Admin', 'email' => 'admin@readverse.com', 'password' => 'password'],
-    ];
+    // Authentication must never reset stored credentials.
 
-    foreach ($defaultAdmins as $def) {
-        $hash = password_hash($def['password'], PASSWORD_BCRYPT);
-        $stmtCheck = $pdo->prepare("SELECT id FROM admins WHERE LOWER(email) = LOWER(?)");
-        $stmtCheck->execute([$def['email']]);
-        $existing = $stmtCheck->fetch();
-
-        if ($existing) {
-            $pdo->prepare("UPDATE admins SET password = ?, is_super_admin = 1 WHERE id = ?")->execute([$hash, $existing['id']]);
-        } else {
-            $pdo->prepare("INSERT INTO admins (name, email, password, is_super_admin, created_at, updated_at) VALUES (?, ?, ?, 1, NOW(), NOW())")
-                ->execute([$def['name'], strtolower($def['email']), $hash]);
+    // Detect action from ?action= param OR from REQUEST_URI path
+    // e.g. POST /api/admin/login → action=login
+    $action = isset($_GET['action']) ? $_GET['action'] : 'ping';
+    if ($action === 'ping' && isset($_SERVER['REQUEST_URI'])) {
+        if (preg_match('#/api/admin/(login|me|logout)#i', $_SERVER['REQUEST_URI'], $m)) {
+            $action = strtolower($m[1]);
         }
     }
 
-    $action = isset($_GET['action']) ? $_GET['action'] : 'login';
+    // ── ACTION: PING / DEBUG ──
+    if ($action === 'ping') {
+        echo json_encode(['status' => 'ok']);
+        exit;
+    }
+
     $rawInput = file_get_contents('php://input');
     $input = json_decode($rawInput, true) ?: $_POST;
 
     // ── ACTION: LOGIN ──
     if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = strtolower(trim($input['email'] ?? ''));
-        $password = trim($input['password'] ?? '');
+        $password = $input['password'] ?? '';
 
-        if (empty($email) || empty($password)) {
+        if (!is_string($password) || $email === '' || $password === '') {
             http_response_code(422);
             echo json_encode(['message' => 'Email and password are required.']);
             exit;
@@ -92,19 +105,7 @@ try {
         $stmt->execute([$email]);
         $admin = $stmt->fetch();
 
-        // Check password matching (support standard verify, direct matching for default super admin, or plain text fallback)
-        $isValid = false;
-        if ($admin) {
-            if (password_verify($password, $admin['password'])) {
-                $isValid = true;
-            } elseif ($email === 'naishad@ssgd.com' && $password === 'naishad@123') {
-                $isValid = true;
-                $newHash = password_hash('naishad@123', PASSWORD_BCRYPT);
-                $pdo->prepare("UPDATE admins SET password = ? WHERE id = ?")->execute([$newHash, $admin['id']]);
-            } elseif ($email === 'admin@readverse.com' && $password === 'password') {
-                $isValid = true;
-            }
-        }
+        $isValid = $admin && password_verify($password, $admin['password']);
 
         if (!$isValid || !$admin) {
             http_response_code(401);
@@ -112,12 +113,9 @@ try {
             exit;
         }
 
-        // Generate token
         $plainToken = bin2hex(random_bytes(32));
         $hashedToken = hash('sha256', $plainToken);
 
-        // Delete old tokens and insert new
-        $pdo->prepare("DELETE FROM personal_access_tokens WHERE tokenable_id = ? AND tokenable_type = 'App\\\\Models\\\\Admin'")->execute([$admin['id']]);
         $stmtToken = $pdo->prepare("INSERT INTO personal_access_tokens (tokenable_type, tokenable_id, name, token, abilities, created_at, updated_at) VALUES ('App\\\\Models\\\\Admin', ?, 'admin-panel', ?, '[\"*\"]', NOW(), NOW())");
         $stmtToken->execute([$admin['id'], $hashedToken]);
 
@@ -128,13 +126,14 @@ try {
             'manage_settings' => true,
         ];
 
+        if (ob_get_length()) ob_clean();
         echo json_encode([
             'token' => $plainToken,
             'admin' => [
                 'id'             => (int)$admin['id'],
                 'name'           => $admin['name'],
                 'email'          => $admin['email'],
-                'is_super_admin' => true,
+                'is_super_admin' => (bool)$admin['is_super_admin'],
                 'permissions'    => $permissions,
             ],
         ]);
@@ -144,7 +143,9 @@ try {
     // ── ACTION: ME ──
     if ($action === 'me') {
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = str_replace('Bearer ', '', $authHeader);
+        $token = preg_replace('/^Bearer\s+/i', '', $authHeader);
+        // Support both Sanctum id|secret and standalone tokens.
+        $token = str_contains($token, '|') ? explode('|', $token, 2)[1] : $token;
 
         if (!$token) {
             http_response_code(401);
@@ -153,8 +154,8 @@ try {
         }
 
         $hashedToken = hash('sha256', $token);
-        $stmt = $pdo->prepare("SELECT a.* FROM admins a JOIN personal_access_tokens t ON a.id = t.tokenable_id WHERE t.token = ? LIMIT 1");
-        $stmt->execute([$hashedToken]);
+        $stmt = $pdo->prepare("SELECT a.* FROM admins a JOIN personal_access_tokens t ON a.id = t.tokenable_id WHERE t.token = ? AND t.tokenable_type = ? AND (t.expires_at IS NULL OR t.expires_at > NOW()) LIMIT 1");
+        $stmt->execute([$hashedToken, 'App\Models\Admin']);
         $admin = $stmt->fetch();
 
         if (!$admin) {
@@ -174,7 +175,7 @@ try {
             'id'             => (int)$admin['id'],
             'name'           => $admin['name'],
             'email'          => $admin['email'],
-            'is_super_admin' => true,
+            'is_super_admin' => (bool)$admin['is_super_admin'],
             'permissions'    => $permissions,
         ]);
         exit;
@@ -183,7 +184,9 @@ try {
     // ── ACTION: LOGOUT ──
     if ($action === 'logout') {
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        $token = str_replace('Bearer ', '', $authHeader);
+        $token = preg_replace('/^Bearer\s+/i', '', $authHeader);
+        // Support both Sanctum id|secret and standalone tokens.
+        $token = str_contains($token, '|') ? explode('|', $token, 2)[1] : $token;
         if ($token) {
             $hashedToken = hash('sha256', $token);
             $pdo->prepare("DELETE FROM personal_access_tokens WHERE token = ?")->execute([$hashedToken]);
@@ -192,7 +195,7 @@ try {
         exit;
     }
 
-} catch (PDOException $e) {
+} catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['error' => true, 'message' => $e->getMessage()]);
 }

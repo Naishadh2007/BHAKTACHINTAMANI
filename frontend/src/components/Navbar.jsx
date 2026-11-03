@@ -7,7 +7,9 @@ import {
   IconBook, IconSun, IconMoon,
   IconTranslate, IconDotsThree,
   IconBookmark, IconBookmarkFilled,
+  IconMessage,
 } from './Icons';
+import FeedbackModal from './FeedbackModal';
 import './Navbar.css';
 
 const FONT_SIZES = [20, 22, 24, 26, 28, 30];
@@ -22,8 +24,9 @@ export default function Navbar() {
   const isChapterPage   = location.pathname.startsWith('/chapter/');
   const chapterBookmark = currentChapterId ? isBookmarked(Number(currentChapterId)) : false;
 
-  // 3-dot popup state
+  // 3-dot popup & feedback modal state
   const [menuOpen, setMenuOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const menuRef  = useRef(null);
   const dotsBtnRef = useRef(null);
 
@@ -184,12 +187,38 @@ export default function Navbar() {
                     </div>
                   </>
                 )}
+
+                {/* ── Feedback Section ── */}
+                <div className="popup-divider" aria-hidden="true" />
+                <div className="popup-section" style={{ paddingBottom: 0 }}>
+                  <button
+                    id="popup-feedback-btn"
+                    className="navbar-dropdown-item popup-feedback-btn"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setFeedbackOpen(true);
+                    }}
+                    aria-label={lang === 'gu' ? 'પ્રતિભાવ આપો' : 'Give feedback'}
+                  >
+                    <IconMessage size={16} color="var(--accent)" />
+                    <span>
+                      {lang === 'gu' ? 'પ્રતિભાવ / સુચન' : 'Feedback'}
+                    </span>
+                  </button>
+                </div>
+
               </div>
             )}
           </div>
 
         </div>
       </div>
+
+      {/* ── Feedback Modal ── */}
+      <FeedbackModal
+        isOpen={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
     </header>
   );
 }

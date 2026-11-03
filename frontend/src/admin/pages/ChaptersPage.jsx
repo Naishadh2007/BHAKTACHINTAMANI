@@ -13,7 +13,7 @@ import {
   IconFileText
 } from '../../components/Icons';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://bhaktachintamani.freedev.app';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const CHAPTERS_API = `${API_BASE}/api_admin_chapters.php`;
 const LIMIT = 30;
 

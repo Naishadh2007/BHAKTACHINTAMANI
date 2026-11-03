@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import PermissionToggle from '../components/PermissionToggle';
 import { IconPlus, IconEdit, IconTrash, IconCheck, IconAlert } from '../../components/Icons';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://bhaktachintamani.freedev.app';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 const USERS_API = `${API_BASE}/api_admin_users.php`;
 
 const ALL_PERMS = [

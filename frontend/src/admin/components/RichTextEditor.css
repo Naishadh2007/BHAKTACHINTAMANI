@@ -6,6 +6,7 @@
 
 .rich-editor__toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   background: var(--bg-surface);
@@ -46,7 +47,7 @@
   border-radius: 0 0 var(--radius-md) var(--radius-md);
   padding: 1.25rem 1.5rem;
   color: var(--text-primary);
-  font-family: 'Rasa', serif !important;
+  font-family: 'Bharati Gopika Two', 'Rasa', serif !important;
   font-size: 1.25rem;
   line-height: 1.9;
   min-height: 380px;
@@ -59,14 +60,33 @@
 
 .rich-editor__content * {
   color: inherit !important;
-  font-family: 'Rasa', serif !important;
+  font-family: 'Bharati Gopika Two', 'Rasa', serif !important;
   background: transparent !important;
 }
 
 .rich-editor__content b,
 .rich-editor__content strong {
-  font-weight: 700 !important;
+  font-family: 'Bharati Title Two', 'Rasa', serif !important;
+  font-weight: normal !important;
   color: var(--text-primary) !important;
+}
+
+.rich-editor__source {
+  width: 100%;
+  min-height: 380px;
+  max-height: 600px;
+  resize: vertical;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  font: 0.95rem/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.rich-editor__source:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .rich-editor__content abbr {
