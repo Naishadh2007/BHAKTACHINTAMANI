@@ -2,7 +2,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Admin-Token');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') { http_response_code(405); exit; }
 

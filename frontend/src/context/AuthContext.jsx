@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
     if (!token) return;
     let active = true;
     axios.get(`${API_BASE}/api_admin.php?action=me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { 'X-Admin-Token': token },
     }).then(({ data }) => {
       if (active && data?.id) {
         setAdmin(data);
@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => {
           return axios.post(`${API_BASE}/api_admin.php?action=logout`, {}, {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: { 'X-Admin-Token': token },
           });
         });
       }

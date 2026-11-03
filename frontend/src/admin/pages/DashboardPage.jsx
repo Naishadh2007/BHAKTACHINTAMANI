@@ -41,7 +41,7 @@ export default function DashboardPage() {
 
         // Feedbacks count
         let fbCount = 0;
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = { 'X-Admin-Token': token };
         const fbRes = await axios.get(`${FEEDBACK_API}?limit=1`, { headers }).catch(() => null);
         if (fbRes?.data && !isHTML(fbRes.data)) {
           fbCount = fbRes.data.total ?? 0;

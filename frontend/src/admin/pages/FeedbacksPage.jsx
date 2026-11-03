@@ -12,7 +12,7 @@ const FEEDBACK_API = `${API_BASE}/api_feedbacks.php`;
 
 export default function FeedbacksPage() {
   const { authAxios, token } = useAuth();
-  const authHeaders = { Authorization: `Bearer ${token}` };
+  const authHeaders = { 'X-Admin-Token': token };
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

@@ -20,7 +20,7 @@ const EMPTY_PERMS = Object.fromEntries(ALL_PERMS.map(p => [p.key, false]));
 
 export default function UsersPage() {
   const { authAxios, token }      = useAuth();
-  const requestConfig = { headers: { Authorization: `Bearer ${token}` } };
+  const requestConfig = { headers: { 'X-Admin-Token': token } };
   const [users, setUsers]         = useState([]);
   const [loading, setLoading]     = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -30,19 +30,22 @@ export default function UsersPage() {
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState('');
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true);
-    authAxios().get('/users')
-      .then(r => {
-        const list = Array.isArray(r.data) ? r.data : (Array.isArray(r.data?.data) ? r.data.data : []);
-        setUsers(list);
-      })
-      .catch(() => {
-        axios.get(USERS_API, requestConfig)
-          .then(r => setUsers(Array.isArray(r.data) ? r.data : []))
-          .catch(() => setUsers([]));
-      })
-      .finally(() => setLoading(false));
+    setError('');
+    try {
+      let response = await axios.get(USERS_API, requestConfig);
+      if (!Array.isArray(response.data)) {
+        response = await authAxios().get('/users');
+      }
+      const list = Array.isArray(response.data) ? response.data : response.data?.data;
+      if (!Array.isArray(list)) throw new Error('Invalid users response');
+      setUsers(list);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Could not load admin users. Please sign in again and retry.');
+    } finally {
+      setLoading(false);
+    }
   }, [authAxios, token]);
 
   useEffect(() => {
@@ -124,6 +127,9 @@ export default function UsersPage() {
           <span className="scroll-loader" style={{ width: 28, height: 28, borderWidth: 3 }} />
         </div>
       ) : (
+        <>
+        {error && <div className="form-error" role="alert">{error}</div>}
+        {!error && users.length === 0 && <p>No admin users found.</p>}
         <div className="users-list">
           {users.map(user => (
             <div key={user.id} className="user-card">
@@ -180,6 +186,7 @@ export default function UsersPage() {
             </div>
           ))}
         </div>
+        </>
       )}
 
       {/* Create/Edit Modal */}

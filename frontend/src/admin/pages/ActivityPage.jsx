@@ -8,7 +8,7 @@ export default function ActivityPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    axios.get('/api_admin_activity.php', { headers: { Authorization: `Bearer ${token}` } })
+    axios.get('/api_admin_activity.php', { headers: { 'X-Admin-Token': token } })
       .then(({ data }) => setEntries(Array.isArray(data) ? data : []))
       .catch(() => setError('Could not load activity.'));
   }, [token]);

@@ -2,6 +2,9 @@
 
 function currentAdmin(PDO $pdo): ?array {
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    if (!$header && !empty($_SERVER['HTTP_X_ADMIN_TOKEN'])) {
+        $header = 'Bearer ' . $_SERVER['HTTP_X_ADMIN_TOKEN'];
+    }
     if (!preg_match('/^Bearer\s+(.+)$/i', $header, $match)) return null;
     $token = str_contains($match[1], '|') ? explode('|', $match[1], 2)[1] : $match[1];
     $stmt = $pdo->prepare("SELECT a.id, a.name, a.email, a.is_super_admin, a.permissions, t.tokenable_type FROM personal_access_tokens t JOIN admins a ON a.id = t.tokenable_id WHERE t.token = ? AND (t.expires_at IS NULL OR t.expires_at > NOW()) LIMIT 1");

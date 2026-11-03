@@ -20,7 +20,7 @@ export default function ChapterEditPage() {
   const isEdit   = Boolean(id);
   const navigate = useNavigate();
   const { authAxios, token } = useAuth();
-  const requestConfig = { headers: { Authorization: `Bearer ${token}` } };
+  const requestConfig = { headers: { 'X-Admin-Token': token } };
 
   const [form, setForm]         = useState(EMPTY);
   const [activeTab, setActiveTab] = useState('gu'); // 'gu' or 'en'

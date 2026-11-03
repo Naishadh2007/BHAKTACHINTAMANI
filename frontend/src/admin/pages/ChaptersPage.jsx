@@ -19,7 +19,7 @@ const LIMIT = 30;
 
 export default function ChaptersPage() {
   const { authAxios, token } = useAuth();
-  const requestConfig = { headers: { Authorization: `Bearer ${token}` } };
+  const requestConfig = { headers: { 'X-Admin-Token': token } };
   const [searchParams] = useSearchParams();
 
   const [chapters, setChapters]   = useState([]);
