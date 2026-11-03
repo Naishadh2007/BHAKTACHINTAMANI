@@ -6,10 +6,21 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
-$host   = 'sql107.infinityfree.com';
-$dbuser = 'if0_42640441';
-$pass   = 'Naishadhbv2007';
-$db     = 'if0_42640441_bhaktchintamani';
+$isLocal = in_array(explode(':', $_SERVER['HTTP_HOST'] ?? '')[0], ['localhost', '127.0.0.1', ''])
+    || (php_sapi_name() === 'cli-server')
+    || (isset($_SERVER['SERVER_ADDR']) && in_array($_SERVER['SERVER_ADDR'], ['127.0.0.1', '::1']));
+
+if ($isLocal) {
+    $host   = '127.0.0.1';
+    $dbuser = 'root';
+    $pass   = '';
+    $db     = 'bhaktachintamani';
+} else {
+    $host   = 'sql107.infinityfree.com';
+    $dbuser = 'if0_42640441';
+    $pass   = 'Naishadhbv2007';
+    $db     = 'if0_42640441_bhaktchintamani';
+}
 
 function respond($data, $code = 200) {
     http_response_code($code);
@@ -24,8 +35,15 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => true,
     ]);
 
+    require __DIR__ . '/admin_activity.php';
     $method = $_SERVER['REQUEST_METHOD'];
+    $admin = $method === 'GET' ? null : requireAdmin($pdo, 'manage_chapters');
     $id     = isset($_GET['id'])   ? intval($_GET['id'])   : null;
+    if (!$id && isset($_SERVER['REQUEST_URI'])) {
+        if (preg_match('#/chapters/(\d+)#i', $_SERVER['REQUEST_URI'], $m)) {
+            $id = intval($m[1]);
+        }
+    }
     $bulk   = isset($_GET['bulk']);
     $input  = json_decode(file_get_contents('php://input'), true);
     if (!is_array($input)) $input = [];
@@ -87,6 +105,7 @@ try {
         $ph = implode(',', $ids);
         if ($action === 'delete') {
             $pdo->exec("DELETE FROM chapters WHERE id IN ($ph)");
+            logAdminActivity($pdo, $admin, 'deleted', count($ids) . ' chapters');
         }
         respond(['message' => 'Done']);
     }
@@ -109,6 +128,7 @@ try {
             ->execute([$ord, $t, $tgu, $ten, $d, $dgu, $den, $c, $cgu, $cen]);
 
         $newId = $pdo->lastInsertId();
+        logAdminActivity($pdo, $admin, 'created', 'chapter', (int)$newId);
         $s = $pdo->prepare("SELECT * FROM chapters WHERE id=?");
         $s->execute([$newId]);
         respond($s->fetch());
@@ -127,6 +147,7 @@ try {
         if (!$sets) respond(['message' => 'Nothing to update']);
         $vals[] = $id;
         $pdo->prepare("UPDATE chapters SET " . implode(',', $sets) . ",updated_at=NOW() WHERE id=?")->execute($vals);
+        logAdminActivity($pdo, $admin, 'updated', 'chapter', $id);
         $s = $pdo->prepare("SELECT * FROM chapters WHERE id=?");
         $s->execute([$id]);
         respond($s->fetch());
@@ -135,6 +156,7 @@ try {
     // ── DELETE ────────────────────────────────────────────────────────────────
     if ($method === 'DELETE' && $id) {
         $pdo->prepare("DELETE FROM chapters WHERE id=?")->execute([$id]);
+        logAdminActivity($pdo, $admin, 'deleted', 'chapter', $id);
         respond(['message' => 'Deleted']);
     }
 

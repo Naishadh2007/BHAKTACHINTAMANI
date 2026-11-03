@@ -6,6 +6,7 @@ import ChaptersPage from './pages/ChaptersPage';
 import ChapterEditPage from './pages/ChapterEditPage';
 import UsersPage from './pages/UsersPage';
 import FeedbacksPage from './pages/FeedbacksPage';
+import ActivityPage from './pages/ActivityPage';
 import AdminLayout from './components/AdminLayout';
 import './admin.css';
 
@@ -26,6 +27,7 @@ export default function AdminApp() {
                 <Route path="chapters/:id/edit" element={<ChapterEditPage />} />
                 <Route path="users" element={<UsersPage />} />
                 <Route path="feedbacks" element={<FeedbacksPage />} />
+                <Route path="activity" element={<ActivityPage />} />
               </Routes>
             </AdminLayout>
           </ProtectedRoute>

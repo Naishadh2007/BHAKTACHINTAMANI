@@ -25,6 +25,12 @@ if (preg_match('#^/(public/)?api/admin/users#i', $uri)) {
     exit;
 }
 
+// Admin activity history
+if (preg_match('#^/(public/)?api/admin/activity#i', $uri)) {
+    require $dir . '/api_admin_activity.php';
+    exit;
+}
+
 // Feedbacks (Public & Admin)
 if (preg_match('#^/(public/)?api/(admin/)?feedbacks?#i', $uri)) {
     require $dir . '/api_feedbacks.php';

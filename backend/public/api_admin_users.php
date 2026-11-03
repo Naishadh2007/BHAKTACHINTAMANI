@@ -6,10 +6,21 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
-$host   = 'sql107.infinityfree.com';
-$dbuser = 'if0_42640441';
-$pass   = 'Naishadhbv2007';
-$db     = 'if0_42640441_bhaktchintamani';
+$isLocal = in_array(explode(':', $_SERVER['HTTP_HOST'] ?? '')[0], ['localhost', '127.0.0.1', ''])
+    || (php_sapi_name() === 'cli-server')
+    || (isset($_SERVER['SERVER_ADDR']) && in_array($_SERVER['SERVER_ADDR'], ['127.0.0.1', '::1']));
+
+if ($isLocal) {
+    $host   = '127.0.0.1';
+    $dbuser = 'root';
+    $pass   = '';
+    $db     = 'bhaktachintamani';
+} else {
+    $host   = 'sql107.infinityfree.com';
+    $dbuser = 'if0_42640441';
+    $pass   = 'Naishadhbv2007';
+    $db     = 'if0_42640441_bhaktchintamani';
+}
 
 function respond($data, $code = 200) {
     http_response_code($code);
@@ -24,8 +35,16 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => true,
     ]);
 
+    require __DIR__ . '/admin_activity.php';
+    $admin = requireAdmin($pdo, 'manage_users');
+
     $method = $_SERVER['REQUEST_METHOD'];
     $id     = isset($_GET['id']) ? intval($_GET['id']) : null;
+    if (!$id && isset($_SERVER['REQUEST_URI'])) {
+        if (preg_match('#/users/(\d+)#i', $_SERVER['REQUEST_URI'], $m)) {
+            $id = intval($m[1]);
+        }
+    }
     $input  = json_decode(file_get_contents('php://input'), true);
     if (!is_array($input)) $input = [];
 
@@ -70,6 +89,7 @@ try {
             ->execute([$name, $email, $hash, json_encode($perms)]);
 
         $newId = $pdo->lastInsertId();
+        logAdminActivity($pdo, $admin, 'created', 'admin user', (int)$newId);
         $s = $pdo->prepare("SELECT id, name, email, is_super_admin, permissions, created_at FROM admins WHERE id = ?");
         $s->execute([$newId]);
         $u = $s->fetch();
@@ -89,6 +109,7 @@ try {
         if (!$sets) respond(['message' => 'Nothing to update']);
         $vals[] = $id;
         $pdo->prepare("UPDATE admins SET " . implode(',', $sets) . ",updated_at=NOW() WHERE id=?")->execute($vals);
+        logAdminActivity($pdo, $admin, 'updated', 'admin user', $id);
 
         $s = $pdo->prepare("SELECT id, name, email, is_super_admin, permissions, created_at FROM admins WHERE id = ?");
         $s->execute([$id]);
@@ -106,6 +127,7 @@ try {
         $u = $chk->fetch();
         if ($u && $u['is_super_admin']) respond(['message' => 'Cannot delete super admin.'], 403);
         $pdo->prepare("DELETE FROM admins WHERE id=?")->execute([$id]);
+        logAdminActivity($pdo, $admin, 'deleted', 'admin user', $id);
         respond(['message' => 'Deleted']);
     }
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import { requestAdminLogin } from './adminLogin';
 const AuthContext = createContext(null);
@@ -17,6 +17,20 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(
     () => sessionStorage.getItem('rv-token') || null
   );
+
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    axios.get(`${API_BASE}/api_admin.php?action=me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(({ data }) => {
+      if (active && data?.id) {
+        setAdmin(data);
+        sessionStorage.setItem('rv-admin', JSON.stringify(data));
+      }
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [token]);
 
   const login = useCallback(async (email, password) => {
     const { token: t, admin: a } = await requestAdminLogin(axios, API_BASE, email, password);

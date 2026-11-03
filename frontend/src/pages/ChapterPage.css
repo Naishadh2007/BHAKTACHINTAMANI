@@ -352,26 +352,14 @@
   margin-bottom: 1.7rem;
   line-height: 1.95;
   text-align: justify !important;
-  text-align-last: justify !important;
+  text-align-last: auto;
   text-justify: inter-word !important;
   hyphens: auto;
   -webkit-hyphens: auto;
   word-break: break-word;
 }
 
-/* Force ALL inline styles to use justify — default */
-.chapter__text-content *,
-.chapter__html-content * {
-  text-align: justify !important;
-  text-align-last: justify !important;
-  text-justify: inter-word !important;
-}
-
-/*
-  Respect explicit alignment set by admin in rich text editor (style or align attribute).
-  Attribute selector specificity (0,2,0) > universal * (0,1,0),
-  so these win even against the !important above.
-*/
+/* Explicit editor alignment wins over the default justified paragraph. */
 .chapter__html-content [style*="text-align: center"],
 .chapter__html-content [style*="text-align:center"],
 .chapter__html-content [align="center"],

@@ -19,7 +19,8 @@ const EMPTY_FORM = { name: '', email: '', password: '' };
 const EMPTY_PERMS = Object.fromEntries(ALL_PERMS.map(p => [p.key, false]));
 
 export default function UsersPage() {
-  const { authAxios }             = useAuth();
+  const { authAxios, token }      = useAuth();
+  const requestConfig = { headers: { Authorization: `Bearer ${token}` } };
   const [users, setUsers]         = useState([]);
   const [loading, setLoading]     = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -37,12 +38,12 @@ export default function UsersPage() {
         setUsers(list);
       })
       .catch(() => {
-        axios.get(USERS_API)
+        axios.get(USERS_API, requestConfig)
           .then(r => setUsers(Array.isArray(r.data) ? r.data : []))
           .catch(() => setUsers([]));
       })
       .finally(() => setLoading(false));
-  }, [authAxios]);
+  }, [authAxios, token]);
 
   useEffect(() => {
     load();
@@ -75,14 +76,14 @@ export default function UsersPage() {
         permissions: perms,
       };
       if (editUser) {
-        await axios.put(`${USERS_API}?id=${editUser.id}`, payload);
+        await axios.put(`${USERS_API}?id=${editUser.id}`, payload, requestConfig);
       } else {
         if (!form.name || !form.email || !form.password) {
           setError('Name, email, and password are required.');
           setSaving(false);
           return;
         }
-        await axios.post(USERS_API, payload);
+        await axios.post(USERS_API, payload, requestConfig);
       }
       setShowModal(false);
       load();
@@ -96,7 +97,7 @@ export default function UsersPage() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this admin user?')) return;
     try {
-      await axios.delete(`${USERS_API}?id=${id}`);
+      await axios.delete(`${USERS_API}?id=${id}`, requestConfig);
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Delete failed.');

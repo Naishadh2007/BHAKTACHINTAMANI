@@ -18,7 +18,8 @@ const CHAPTERS_API = `${API_BASE}/api_admin_chapters.php`;
 const LIMIT = 30;
 
 export default function ChaptersPage() {
-  const { authAxios } = useAuth();
+  const { authAxios, token } = useAuth();
+  const requestConfig = { headers: { Authorization: `Bearer ${token}` } };
   const [searchParams] = useSearchParams();
 
   const [chapters, setChapters]   = useState([]);
@@ -158,7 +159,7 @@ export default function ChaptersPage() {
       await axios.post(`${CHAPTERS_API}?bulk=1`, {
         ids: [...selected],
         action,
-      });
+      }, requestConfig);
       setChapters([]);
       setPage(1);
       setHasMore(true);
@@ -175,7 +176,7 @@ export default function ChaptersPage() {
   const deleteChapter = async (id) => {
     if (!confirm('Delete this chapter permanently?')) return;
     try {
-      await axios.delete(`${CHAPTERS_API}?id=${id}`);
+      await axios.delete(`${CHAPTERS_API}?id=${id}`, requestConfig);
       setChapters(prev => prev.filter(c => c.id !== id));
       setTotal(t => t - 1);
     } catch (e) {

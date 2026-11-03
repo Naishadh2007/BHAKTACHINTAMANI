@@ -19,7 +19,8 @@ export default function ChapterEditPage() {
   const { id }   = useParams();
   const isEdit   = Boolean(id);
   const navigate = useNavigate();
-  const { authAxios } = useAuth();
+  const { authAxios, token } = useAuth();
+  const requestConfig = { headers: { Authorization: `Bearer ${token}` } };
 
   const [form, setForm]         = useState(EMPTY);
   const [activeTab, setActiveTab] = useState('gu'); // 'gu' or 'en'
@@ -92,14 +93,14 @@ export default function ChapterEditPage() {
       if (isEdit) {
         // PUT via direct PHP script first, fallback to authAxios
         try {
-          await axios.put(`${CHAPTERS_API}?id=${id}`, payload);
+          await axios.put(`${CHAPTERS_API}?id=${id}`, payload, requestConfig);
         } catch {
           await authAxios().put(`/chapters/${id}`, payload);
         }
       } else {
         // POST via direct PHP script first, fallback to authAxios
         try {
-          await axios.post(CHAPTERS_API, payload);
+          await axios.post(CHAPTERS_API, payload, requestConfig);
         } catch {
           await authAxios().post('/chapters', payload);
         }

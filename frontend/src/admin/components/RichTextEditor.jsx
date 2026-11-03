@@ -36,15 +36,34 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
   };
 
   // Strip inline color/background styles before saving so content is theme-neutral
-  const cleanHTML = (html) => html
-    .replace(/\bcolor\s*:\s*[^;\"]+;?/gi, '')
-    .replace(/background(-color)?\s*:\s*[^;\"]+;?/gi, '')
-    .replace(/font-size\s*:\s*[^;\"]+;?/gi, '');
+  const cleanHTML = (html) => {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    container.querySelectorAll('[style], [color], [bgcolor], font').forEach(node => {
+      node.style.removeProperty('color');
+      node.style.removeProperty('background');
+      node.style.removeProperty('background-color');
+      node.style.removeProperty('font-size');
+      node.style.removeProperty('font-family');
+      node.removeAttribute('color');
+      node.removeAttribute('bgcolor');
+      if (!node.getAttribute('style')) node.removeAttribute('style');
+      if (node.tagName === 'FONT') node.replaceWith(...node.childNodes);
+    });
+    return container.innerHTML;
+  };
 
   const handleInput = () => {
     if (editorRef.current) {
-      onChange(cleanHTML(editorRef.current.innerHTML));
+      onChange(editorRef.current.innerHTML);
     }
+  };
+
+  const handleBlur = () => {
+    if (!editorRef.current) return;
+    const html = cleanHTML(editorRef.current.innerHTML);
+    editorRef.current.innerHTML = html;
+    onChange(html);
   };
 
   /**
@@ -160,43 +179,38 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
     setExistingAbbrNode(null);
   };
 
-  /**
-   * Fix Copy-Paste Glitch:
-   * Intercepts paste, strips out inline font colors, font-sizes, and font-families,
-   * preserving text paragraphs and formatting so it strictly uses the Rasa font & theme color.
-   */
+  // Keep semantic formatting while removing website styles, classes and links.
+  const cleanPastedMarkup = (html) => {
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const allowed = new Set(['P', 'DIV', 'BR', 'B', 'STRONG', 'I', 'EM', 'UL', 'OL', 'LI', 'ABBR']);
+    const blocked = new Set(['SCRIPT', 'STYLE', 'SVG', 'IFRAME', 'OBJECT', 'META', 'LINK']);
+    const cleanNode = (node) => {
+      if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent);
+      if (node.nodeType !== Node.ELEMENT_NODE || blocked.has(node.tagName)) return document.createDocumentFragment();
+      const output = allowed.has(node.tagName)
+        ? document.createElement(node.tagName.toLowerCase())
+        : document.createDocumentFragment();
+      if (node.tagName === 'ABBR') {
+        const meaning = node.getAttribute('data-meaning') || node.getAttribute('title');
+        if (meaning) output.setAttribute('data-meaning', meaning);
+      }
+      node.childNodes.forEach(child => output.appendChild(cleanNode(child)));
+      return output;
+    };
+    const container = document.createElement('div');
+    parsed.body.childNodes.forEach(node => container.appendChild(cleanNode(node)));
+    return container.innerHTML;
+  };
+
   const handlePaste = (e) => {
     e.preventDefault();
-    const clipboardData = e.clipboardData;
-    let pastedData = clipboardData.getData('text/html') || clipboardData.getData('text/plain');
-
-    if (!pastedData) return;
-
-    // If pasted HTML exists, clean out inline color, font-size, background, and font-family style declarations
-    let cleaned = pastedData
-      .replace(/style="[^"]*"/gi, (match) => {
-        return match
-          .replace(/color\s*:\s*[^;"]+;?/gi, '')
-          .replace(/font-size\s*:\s*[^;"]+;?/gi, '')
-          .replace(/font-family\s*:\s*[^;"]+;?/gi, '')
-          .replace(/background(-color)?\s*:\s*[^;"]+;?/gi, '');
-      })
-      .replace(/<font[^>]*>/gi, '')
-      .replace(/<\/font>/gi, '');
-
-    // If html failed or empty, fallback to plain text lines
-    if (!cleaned || !clipboardData.getData('text/html')) {
-      const text = clipboardData.getData('text/plain');
-      const formattedLines = text
-        .split('\n')
-        .map(line => line.trim() ? `<p>${line.trim()}</p>` : '<br>')
-        .join('');
-      cleaned = formattedLines;
-    }
-
-    document.execCommand('insertHTML', false, cleaned);
+    const html = e.clipboardData.getData('text/html');
+    const text = e.clipboardData.getData('text/plain');
+    const cleaned = html ? cleanPastedMarkup(html) : '';
+    if (cleaned) document.execCommand('insertHTML', false, cleaned);
+    else if (text) document.execCommand('insertText', false, text);
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+      onChange(cleanHTML(editorRef.current.innerHTML));
     }
   };
 
@@ -214,6 +228,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
         <button
           type="button"
           className="btn btn-secondary btn-sm rich-editor__btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec('bold')}
           disabled={showHTML}
           title="Bold (Bharati Title Two)"
@@ -226,6 +241,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
         <button
           type="button"
           className="btn btn-primary btn-sm rich-editor__btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handleOpenAbbrModal}
           disabled={showHTML}
           title="Add Word Meaning / Glossary (<abbr>)"
@@ -240,6 +256,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
         <button
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec('justifyLeft')}
           disabled={showHTML}
           title="Align Left"
@@ -249,6 +266,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
         <button
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec('justifyCenter')}
           disabled={showHTML}
           title="Align Center"
@@ -258,6 +276,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
         <button
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec('justifyRight')}
           disabled={showHTML}
           title="Align Right"
@@ -267,6 +286,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
         <button
           type="button"
           className="btn btn-ghost btn-sm rich-editor__btn"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => exec('justifyFull')}
           disabled={showHTML}
           title="Justify Text"
@@ -300,7 +320,7 @@ export default function RichTextEditor({ value, onChange, label, placeholder }) 
         className="rich-editor__content font-rasa"
         contentEditable
         onInput={handleInput}
-        onBlur={handleInput}
+        onBlur={handleBlur}
         onPaste={handlePaste}
         data-placeholder={placeholder || 'Write chapter content here…'}
         onClick={(e) => {

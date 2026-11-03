@@ -59,16 +59,8 @@ try {
 
     // Public visitors may submit feedback; reading or changing it requires an admin token.
     if ($method !== 'POST') {
-        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-        if (!preg_match('/^Bearer\s+(.+)$/i', $authHeader, $match)) {
-            respond(['message' => 'Unauthenticated'], 401);
-        }
-        $token = str_contains($match[1], '|') ? explode('|', $match[1], 2)[1] : $match[1];
-        $stmt = $pdo->prepare("SELECT 1 FROM personal_access_tokens t JOIN admins a ON a.id = t.tokenable_id WHERE t.token = ? AND t.tokenable_type = ? AND (t.expires_at IS NULL OR t.expires_at > NOW()) LIMIT 1");
-        $stmt->execute([hash('sha256', $token), 'App\\Models\\Admin']);
-        if (!$stmt->fetchColumn()) {
-            respond(['message' => 'Unauthenticated'], 401);
-        }
+        require __DIR__ . '/admin_activity.php';
+        $admin = requireAdmin($pdo, 'view_dashboard');
     }
 
     // POST: Public submission
@@ -124,6 +116,7 @@ try {
         if (!$id) respond(['error' => true, 'message' => 'ID required'], 400);
         $stmt = $pdo->prepare("UPDATE feedbacks SET is_read = 1, updated_at = NOW() WHERE id = ?");
         $stmt->execute([$id]);
+        logAdminActivity($pdo, $admin, 'marked read', 'feedback', $id);
         respond(['success' => true]);
     }
 
@@ -132,6 +125,7 @@ try {
         if (!$id) respond(['error' => true, 'message' => 'ID required'], 400);
         $stmt = $pdo->prepare("DELETE FROM feedbacks WHERE id = ?");
         $stmt->execute([$id]);
+        logAdminActivity($pdo, $admin, 'deleted', 'feedback', $id);
         respond(['success' => true]);
     }
 

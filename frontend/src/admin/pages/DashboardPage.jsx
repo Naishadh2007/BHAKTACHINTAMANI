@@ -8,9 +8,10 @@ import { IconBook, IconCheck, IconFileText, IconUsers, IconPlus, IconGlobe, Icon
 const API_BASE = import.meta.env.VITE_API_URL || '';
 const CHAPTERS_API = `${API_BASE}/api_admin_chapters.php`;
 const FEEDBACK_API = `${API_BASE}/api_feedbacks.php`;
+const USERS_API = `${API_BASE}/api_admin_users.php`;
 
 export default function DashboardPage() {
-  const { authAxios } = useAuth();
+  const { authAxios, token } = useAuth();
   const [stats, setStats]     = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,17 +41,21 @@ export default function DashboardPage() {
 
         // Feedbacks count
         let fbCount = 0;
-        const fbRes = await axios.get(`${FEEDBACK_API}?limit=1`).catch(() => null);
+        const headers = { Authorization: `Bearer ${token}` };
+        const fbRes = await axios.get(`${FEEDBACK_API}?limit=1`, { headers }).catch(() => null);
         if (fbRes?.data && !isHTML(fbRes.data)) {
           fbCount = fbRes.data.total ?? 0;
         }
+
+        const usersRes = await axios.get(USERS_API, { headers }).catch(() => null);
+        const usersCount = Array.isArray(usersRes?.data) ? usersRes.data.length : 0;
 
         const total  = data?.total ?? (Array.isArray(data) ? data.length : (Array.isArray(data?.data) ? data.data.length : 0));
         const drafts = Array.isArray(data?.data)
           ? data.data.filter(c => c.status === 'draft').length
           : 0;
 
-        setStats({ published: total - drafts, draft: drafts, total, users: 1, feedbacks: fbCount });
+        setStats({ published: total - drafts, draft: drafts, total, users: usersCount, feedbacks: fbCount });
       } catch {
         setStats({ published: 0, draft: 0, total: 0, users: 0, feedbacks: 0 });
       } finally {
@@ -58,7 +63,7 @@ export default function DashboardPage() {
       }
     };
     fetchStats();
-  }, [authAxios]);
+  }, [authAxios, token]);
 
   const STAT_CARDS = [
     { icon: IconBook,     label: 'Total Chapters', key: 'total',     link: '/admin/chapters' },

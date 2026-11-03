@@ -35,6 +35,9 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => true,
     ]);
 
+    require __DIR__ . '/admin_activity.php';
+    $admin = requireAdmin($pdo, 'manage_users');
+
     $method = $_SERVER['REQUEST_METHOD'];
     $id     = isset($_GET['id']) ? intval($_GET['id']) : null;
     if (!$id && isset($_SERVER['REQUEST_URI'])) {
@@ -86,6 +89,7 @@ try {
             ->execute([$name, $email, $hash, json_encode($perms)]);
 
         $newId = $pdo->lastInsertId();
+        logAdminActivity($pdo, $admin, 'created', 'admin user', (int)$newId);
         $s = $pdo->prepare("SELECT id, name, email, is_super_admin, permissions, created_at FROM admins WHERE id = ?");
         $s->execute([$newId]);
         $u = $s->fetch();
@@ -105,6 +109,7 @@ try {
         if (!$sets) respond(['message' => 'Nothing to update']);
         $vals[] = $id;
         $pdo->prepare("UPDATE admins SET " . implode(',', $sets) . ",updated_at=NOW() WHERE id=?")->execute($vals);
+        logAdminActivity($pdo, $admin, 'updated', 'admin user', $id);
 
         $s = $pdo->prepare("SELECT id, name, email, is_super_admin, permissions, created_at FROM admins WHERE id = ?");
         $s->execute([$id]);
@@ -122,6 +127,7 @@ try {
         $u = $chk->fetch();
         if ($u && $u['is_super_admin']) respond(['message' => 'Cannot delete super admin.'], 403);
         $pdo->prepare("DELETE FROM admins WHERE id=?")->execute([$id]);
+        logAdminActivity($pdo, $admin, 'deleted', 'admin user', $id);
         respond(['message' => 'Deleted']);
     }
 

